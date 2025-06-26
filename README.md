@@ -1,97 +1,103 @@
-# README
+# Dynamic Recurrent Spiking Neural Network with Temporal Averaging
 
-## Dynamic Recurrent Neural Network with Temporal Averaging
+## Overview
 
-### Overview
+This project explores an experimental neural network model combining **stochastic spiking neurons**, **temporal averaging**, and **layer-level recurrence**. Unlike traditional feedforward models, this architecture is designed to simulate biologically inspired dynamics while remaining compatible with gradient-based learning techniques such as backpropagation.
 
-This project implements a simple yet experimental neural network that simulates **recurrent dynamics at the layer level**. Unlike classical feedforward networks, this network processes each input through **multiple iterations**, where each layer is influenced not only by the current input, but also by its own previous activation state and, optionally, by the next layer.
-
----
-
-### Core Ideas
-
-* **Layer-level Recurrence:**
-  Each layer receives as input not only the raw data, but also its own last activation (from the previous iteration). This enables a **memory effect** and allows the network to "settle" or stabilize over time.
-
-* **Post-Layer Feedback:**
-  Optionally, each layer can also take as input the state of the next (higher) layer. This allows feedback and coordination mechanisms between layers.
-
-* **Iterative Dynamics:**
-  For each input, the network performs several forward passes ("time steps"), with each layer's activation in each step depending on its own previous state and the state of neighboring layers. The final output is computed as the mean over all time steps.
-
-* **Stochastic Input:**
-  The input layer works in a binary and stochastic fashion, allowing the network to handle "fuzzy" or noisy data.
-
-* **Binary Activations:**
-  Neurons work with thresholds and fire either 1 or 0, mimicking hard threshold logic.
+We show that, under repeated stochastic input, the time-averaged output of a spiking neuron converges to a **ReLU-like function**, making it differentiable in expectation. This not only enables standard training techniques without surrogate gradients but also suggests that classical dense ReLU networks are effectively **time-averaged approximations of spiking networks**.
 
 ---
 
-### What is the Goal?
+## Core Concepts
 
-This network is designed to explore how
+### 1. Spiking Neurons with Temporal Averaging
 
-* **recurrent dynamics** (feedback, memory)
-* and **temporal averaging**
-  affect learning behavior and pattern recognition.
+Each neuron fires stochastically with a probability equal to its input $x \in [0, 1]$. Its output is binary (0 or 1), determined by a thresholded weighted input. When evaluated over multiple iterations, the average firing rate converges to a **clipped linear function**:
 
-Questions to investigate:
+$\bar{y}(x) = \begin{cases} x & \text{if } w \geq \theta \\ 0 & \text{otherwise} \end{cases}$
 
-* Does the network find more stable or robust solutions than pure feedforward models?
-* Can it generalize with few examples or on noisy input?
-* How does feedback between layers affect learning and stability?
+This is equivalent to a shifted and scaled ReLU. Hence, the network is **backpropagation-compatible without surrogate gradient tricks**.
 
----
+### 2. Layer-Level Recurrence
 
-### Possible Applications and Experiments
+Each layer receives input not just from the previous layer, but also from its own previous activation state (recurrent dynamics) and optionally the next layer (feedback). This allows the network to develop temporal memory and stabilize patterns over multiple iterations.
 
-* **Criticality & Homeostasis:**
-  Investigate how neural layers regulate their activity and maintain "critical" activity levels.
+### 3. No Looping Problem
 
-* **Pattern Completion:**
-  Can the network reconstruct the correct pattern from incomplete or noisy images?
+Because the network operates over **discrete time steps** and aggregates output only after a fixed number of iterations, self-connections and feedback within a layer or across layers do **not create cyclic computation issues**. This temporal unfolding resolves the loop problem inherently.
 
-* **Reservoir Computing/Echo-State Dynamics:**
-  Simulate a reservoir where recurrent dynamics allow for new forms of classification, time-series analysis, or memory.
+### 4. Dense Networks as Averaged SNNs
 
-* **Biologically Inspired Modeling:**
-  Test-bed for neuroscience ideas around memory, stability, and emergent states in neural systems.
+By reversing the usual approximation logic, we propose:
+
+> A ReLU neuron in a standard dense network can be understood as the **expected output of a spiking neuron** under repeated stochastic input.
+
+This provides a fresh theoretical link between deep learning and spike-based computation.
 
 ---
 
-### Usage
+## Mathematical Justification
 
-1. **Training:**
+Let $x \in [0, 1]$ be a real-valued input interpreted as spike probability.
+At each iteration $t$, the input neuron fires:
+$s_t \sim \text{Bernoulli}(x)$
 
-   * Select a (small) dataset, e.g., MNIST, as training examples.
-   * One-hot encode your target labels.
-   * Train the network with the provided training loop. The training process is standard, but internally the network computes iteratively over several time steps.
-2. **Testing:**
+A post-synaptic neuron computes:
+$a_t = w \cdot s_t \quad \text{and} \quad y_t = \begin{cases} 1 & \text{if } a_t \geq \theta \\ 0 & \text{otherwise} \end{cases}$
 
-   * Test how robust the network is to new or noisy input.
-   * Analyze how layer activations evolve over time.
+Averaging over $T$ steps:
+$\bar{y} = \frac{1}{T} \sum_{t=1}^T y_t \to \mathbb{E}[y_t]$
+
+Expected output becomes:
+$\mathbb{E}[y_t] = \begin{cases} x & \text{if } w \geq \theta \\ 0 & \text{otherwise} \end{cases}$
+
+This is equivalent to:
+$\mathbb{E}[\bar{y}(x)] = \text{ReLU}(w \cdot x - \theta) \quad \text{(piecewise linear)}$
+
+This justifies why time-averaged stochastic spiking networks are compatible with backpropagation.
 
 ---
 
-### Example: Training Start
+## Goals of This Project
+
+* Explore **recurrent dynamics** and **temporal memory** in deep learning models.
+* Validate that **spiking behavior over time approximates ReLU**, supporting gradient-based training.
+* Investigate how **feedback between layers** and **self-connections** contribute to stability and computation.
+
+---
+
+## Experiments and Applications
+
+* **Criticality & Homeostasis:** How does the network self-regulate over time?
+* **Pattern Completion:** Can it recover missing or noisy inputs?
+* **Temporal Echo-State Dynamics:** Use internal recurrence to encode memory.
+* **Neuroscience Modeling:** Test biologically inspired connectivity and firing behaviors.
+
+---
+
+## Training and Usage
+
+1. **Train:**
+
+   * Use a dataset like MNIST
+   * One-hot encode targets
+   * Apply standard training, with internal spiking dynamics computed over multiple time steps
 
 ```python
 train_model(model, train_samples, train_labels, epochs=100, batch_size=training_size)
 ```
 
----
+2. **Test:**
 
-### Note
-
-This network is **not a standard ML approach** but rather an experimental, research-oriented framework to study dynamics and self-regulation in neural systems.
-
-**Strengths:** Robustness, memory, self-organization
-**Weaknesses:** Possibly slower learning and less classical performance on large datasets.
+   * Evaluate robustness to noisy or incomplete inputs
+   * Analyze how activation patterns evolve over time
 
 ---
 
-**Have fun experimenting with recurrent layer dynamics!**
+## Why This Matters
+
+* **Bridges biological realism and ML practicality**
+* **Eliminates the need for surrogate gradients**
+* **Provides deeper insight into the origin of common activations like ReLU**
 
 ---
-
-Let me know if you want sections for installation, code structure, or usage tips!
