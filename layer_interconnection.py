@@ -240,11 +240,11 @@ if __name__ == "__main__":
     print("Test dataset size:", len(test_dataset))
 
     input_size = 28 * 28  # MNIST input size
-    hidden_size = [10]  # Example hidden layer sizes
+    hidden_size = [10, 10]  # Example hidden layer sizes
     output_size = 10
-    iterations = 20
+    iterations = 10
 
-    training_size = 10  # Number of training samples to use for testing
+    training_size = 1000  # Number of training samples to use for testing
 
     sample_idx = np.random.randint(0, len(train_dataset), size=training_size)  # Randomly select two samples
     train_samples = train_dataset.data.numpy()[sample_idx].reshape(-1, 28 * 28) / (1.2*255.0)  # Normalize the images to [0, 1]

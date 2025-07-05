@@ -271,11 +271,11 @@ if __name__ == "__main__":
     print("Test dataset size:", len(test_dataset))
 
     input_size = 28 * 28  # MNIST input size
-    hidden_size = [10]  # Example hidden layer sizes
+    hidden_size = [10, 10]  # Example hidden layer sizes
     output_size = 10
     iterations = 10
 
-    training_size = 10  # Number of training samples to use for testing
+    training_size = 1000  # Number of training samples to use for testing
 
     input_layer = InputLayer(28*28)
 

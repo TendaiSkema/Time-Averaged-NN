@@ -44,7 +44,7 @@ class InputLayer:
 
 
 class Neuron:
-    def __init__(self, input_size, threshold=0.7, value=1, learning_rate=0.1):
+    def __init__(self, input_size, threshold=0.7, value=1, learning_rate=0.5):
         self.lr = learning_rate
         self.input_size = input_size
         self.threshold = threshold
@@ -76,7 +76,7 @@ class Neuron:
         return self.bias
 
     def backward(self, grad_output, avg_input):
-        relu_mask = (self.get_average_output() > 0).astype(float)
+        relu_mask = (self.get_average_output() > 0)
         d_grad_output = grad_output * relu_mask
         # dL/dW = outer product of upstream_grad and input
         grad_W = np.mean(avg_input * d_grad_output[:, None], axis=0)
@@ -272,11 +272,11 @@ if __name__ == "__main__":
     print("Test dataset size:", len(test_dataset))
 
     input_size = 28 * 28  # MNIST input size
-    hidden_size = [10]  # Example hidden layer sizes
+    hidden_size = [10, 10]  # Example hidden layer sizes
     output_size = 10
-    iterations = 10
+    iterations = 1000
 
-    training_size = 10  # Number of training samples to use for testing
+    training_size = 100
 
     input_layer = InputLayer(28*28)
 
@@ -288,14 +288,17 @@ if __name__ == "__main__":
     model = SimpleNetwork(input_size=input_size, output_size=output_size, hidden_size=hidden_size, iterations=iterations)
     print(model)
 
-    train_model(model, train_samples, train_labels, epochs=100, batch_size=training_size)
+    train_model(model, train_samples, train_labels, epochs=300, batch_size=training_size)
 
     # Test the model with a sample, show the input image and the predicted label with the correct label
+    random_indexs = np.random.randint(0, len(train_samples), size=10)  # Randomly select 10 samples
+    test_samples = train_samples[random_indexs]
+    test_labels = train_labels[random_indexs]  # Get the corresponding label
     acc = []
-    for i in range(len(train_samples)):
+    for i in range(len(test_samples)):
 
-        test_sample = train_samples[i]  # Normalize the image
-        test_label = train_labels[i]  # Get the corresponding label
+        test_sample = test_samples[i]  # Normalize the image
+        test_label = test_labels[i]  # Get the corresponding label
 
         predicted_output = model.predict(np.array([test_sample]))
         predicted_label = np.argmax(predicted_output, axis=1)[0]  # Get the predicted label
